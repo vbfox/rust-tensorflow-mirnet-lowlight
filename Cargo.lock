@@ -506,6 +506,7 @@ dependencies = [
  "anyhow",
  "image",
  "tensorflow",
+ "thiserror",
 ]
 
 [[package]]
