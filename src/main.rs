@@ -1,36 +1,59 @@
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
 use anyhow::Context;
 use anyhow::Result as AnyResult;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
+use std::path::PathBuf;
+use structopt::StructOpt;
 
 // https://tfhub.dev/rishit-dagli/mirnet-tfjs/1
 // https://colab.research.google.com/github/Rishit-dagli/MIRNet-TFJS/blob/main/MIRNet_Saved_Model.ipynb
 
-mod conversions;
+pub mod conversions;
 use conversions::{image_to_tensor, tensor_to_image};
 
-mod mirnet_model;
+pub mod mirnet_model;
 use mirnet_model::MirnetModel;
 
-fn main() -> AnyResult<()> {
-    let model = MirnetModel::new("model")?;
+mod single_file;
+use single_file::run as single_file;
 
-    // Create input variables for our addition
-    let img_reader = ImageReader::open("79.png").context("Failed to read image")?;
-    let img = img_reader.decode().context("Failed to decode image")?;
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "mirnet_server",
+    about = "A web server for the Low-light image enhancement using mirnet tensorflow model"
+)]
+struct Opt {
+    #[structopt(parse(from_os_str))]
+    input: Option<PathBuf>,
+}
 
-    println!("Opened image {}x{}", img.height(), img.width());
+async fn greet(req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("World");
+    format!("Hello {}!", &name)
+}
 
-    println!("Reading pixels to tensor...");
-    let input = image_to_tensor(&img);
+async fn server() -> AnyResult<()> {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+    })
+    .bind("127.0.0.1:8000")?
+    .run()
+    .await?;
 
-    println!("Running...");
-    let output = model.run(&input)?;
-    let output_image = tensor_to_image(&output)?;
+    Ok(())
+}
 
-    output_image.save_with_format("out.png", image::ImageFormat::Png)?;
-
-    println!("out: {:?}", &output);
+#[actix_web::main]
+async fn main() -> AnyResult<()> {
+    let opt = Opt::from_args();
+    if let Some(path) = opt.input {
+        single_file(path)?;
+    } else {
+        server().await?;
+    }
 
     Ok(())
 }

@@ -17,7 +17,7 @@ FROM alpine:3.15 as server
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/rust-tensorflow-experiments .
+COPY --from=builder /app/target/release/mirnet-server .
 COPY --from=builder /app/model .
 
-ENTRYPOINT ["./rust-tensorflow-experiments"]
+ENTRYPOINT ["./mirnet-server"]
