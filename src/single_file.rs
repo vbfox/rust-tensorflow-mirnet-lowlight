@@ -1,10 +1,8 @@
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
 use anyhow::Context;
 use anyhow::Result as AnyResult;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
 use crate::conversions::{image_to_tensor, tensor_to_image};
 use crate::mirnet_model::MirnetModel;
