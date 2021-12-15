@@ -2,8 +2,6 @@ use anyhow::Context;
 use anyhow::Result as AnyResult;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
-use image::RgbImage;
-use image::Rgba;
 use std::path::Path;
 use tensorflow::Graph;
 use tensorflow::SavedModelBundle;
@@ -15,39 +13,8 @@ use tensorflow::DEFAULT_SERVING_SIGNATURE_DEF_KEY;
 // https://tfhub.dev/rishit-dagli/mirnet-tfjs/1
 // https://colab.research.google.com/github/Rishit-dagli/MIRNet-TFJS/blob/main/MIRNet_Saved_Model.ipynb
 
-/// Convert an RGB image (Rgba is taken as input but the alpha layer is ignored) to a tensor of dimension
-/// `[1, height, width, 3]` using color values between 0 and 1.
-fn image_to_tensor<InnerImageView>(
-    img: &impl GenericImageView<Pixel = Rgba<u8>, InnerImageView = InnerImageView>,
-) -> Tensor<f32> {
-    let mut tensor = Tensor::new(&[1, img.height().into(), img.width().into(), 3]);
-
-    for (i, (_, _, pixel)) in img.pixels().enumerate() {
-        tensor[3 * i] = pixel.0[0] as f32 / 255.0;
-        tensor[3 * i + 1] = pixel.0[1] as f32 / 255.0;
-        tensor[3 * i + 2] = pixel.0[2] as f32 / 255.0;
-    }
-
-    tensor
-}
-
-/// Convert an RGB image (Rgba is taken as input but the alpha layer is ignored) to a tensor of dimension
-/// `[1, height, width, 3]` using color values between 0 and 1.
-fn tensor_to_image(tensor: &Tensor<f32>) -> AnyResult<RgbImage> {
-    let dims = tensor.dims();
-    let output_height: u32 = dims[1].try_into()?;
-    let output_width: u32 = dims[2].try_into()?;
-
-    let mut image = RgbImage::new(output_width, output_height);
-
-    for (i, pixel) in image.pixels_mut().enumerate() {
-        pixel.0[0] = (tensor[3 * i] * 255.0) as u8;
-        pixel.0[1] = (tensor[3 * i + 1] * 255.0) as u8;
-        pixel.0[2] = (tensor[3 * i + 2] * 255.0) as u8;
-    }
-
-    Ok(image)
-}
+mod conversions;
+use conversions::{image_to_tensor, tensor_to_image};
 
 struct MirnetModel {
     graph: Graph,
