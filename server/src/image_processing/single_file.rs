@@ -4,8 +4,8 @@ use image::io::Reader as ImageReader;
 use image::GenericImageView;
 use std::path::Path;
 
-use super::{image_to_tensor, tensor_to_image};
 use super::MirnetModel;
+use super::{image_to_tensor, tensor_to_image};
 
 pub fn run(input: impl AsRef<Path>, output_png: impl AsRef<Path>) -> AnyResult<()> {
     let model = MirnetModel::new("model")?;
