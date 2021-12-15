@@ -36,9 +36,8 @@ function useBlobUrlState(): [
 }
 
 function Dropzone() {
-  const [displayUrl, setInputBlob] = useBlobUrlState();
-  const [outputUrl, setOutputBlob] = useBlobUrlState();
-  const [working, setWorking] = useState(true);
+  const [displayUrl, setDisplayBlob] = useBlobUrlState();
+  const [working, setWorking] = useState(false);
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length === 0) {
@@ -46,8 +45,7 @@ function Dropzone() {
       }
 
       const file = acceptedFiles[0];
-      setInputBlob(file);
-      setOutputBlob(undefined);
+      setDisplayBlob(file);
       setWorking(true);
 
       var data = new FormData();
@@ -59,14 +57,14 @@ function Dropzone() {
       })
         .then((r) => r.blob())
         .then((blob) => {
-          setOutputBlob(blob);
+          setDisplayBlob(blob);
           setWorking(false);
         })
         .catch(() => {
           setWorking(false);
         });
     },
-    [setInputBlob, setOutputBlob]
+    [setDisplayBlob]
   );
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -74,25 +72,20 @@ function Dropzone() {
   });
 
   return (
-    <div {...getRootProps()} className="Drop">
+    <div {...getRootProps()} className="drop">
       <input {...getInputProps()} />
       {isDragActive ? (
         <p>Drop the files here ...</p>
       ) : (
         <p>Drag 'n' drop some files here, or click to select files</p>
       )}
-      <div className="images">
-        <div className="input">
-          {working && (
-            <div className="loader">
-              <SyncLoader color="#0262c8" />
-            </div>
-          )}
-          {displayUrl && <img src={displayUrl} alt="" />}
-        </div>
-        <div className="output">
-          {outputUrl && <img src={outputUrl} alt="" />}
-        </div>
+      <div className="input">
+        {working && (
+          <div className="loader">
+            <SyncLoader color="#0262c8" />
+          </div>
+        )}
+        {displayUrl && <img src={displayUrl} alt="" />}
       </div>
     </div>
   );
@@ -100,7 +93,7 @@ function Dropzone() {
 
 function App() {
   return (
-    <div className="App">
+    <div className="app">
       <Dropzone />
     </div>
   );
