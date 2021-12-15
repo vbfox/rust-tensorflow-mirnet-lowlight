@@ -38,6 +38,7 @@ function useBlobUrlState(): [
 function Dropzone() {
   const [displayUrl, setDisplayBlob] = useBlobUrlState();
   const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length === 0) {
@@ -47,6 +48,7 @@ function Dropzone() {
       const file = acceptedFiles[0];
       setDisplayBlob(file);
       setWorking(true);
+      setError(undefined);
 
       var data = new FormData();
       data.append("input", file);
@@ -60,8 +62,10 @@ function Dropzone() {
           setDisplayBlob(blob);
           setWorking(false);
         })
-        .catch(() => {
+        .catch((err) => {
           setWorking(false);
+          setDisplayBlob(undefined);
+          setError(`${err}`);
         });
     },
     [setDisplayBlob]
@@ -87,6 +91,7 @@ function Dropzone() {
         )}
         {displayUrl && <img src={displayUrl} alt="" />}
       </div>
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }
