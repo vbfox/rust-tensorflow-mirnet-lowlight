@@ -139,7 +139,7 @@ impl UserDb {
         let connection = self.connection().await;
 
         connection.query_row(
-            "SELECT user_id, valid_until FROM users WHERE id=?1",
+            "SELECT user_id, valid_until FROM sessions WHERE id=?1",
             [id],
             |r| {
                 let user_id: i32 = r.get(0)?;

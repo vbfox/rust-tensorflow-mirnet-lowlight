@@ -3,14 +3,17 @@ use std::fmt::{Debug, Display};
 use crate::users::user_db::UserDb;
 use crate::users::{hash_password, verify_password};
 use actix_identity::Identity;
+use actix_web::web;
 use actix_web::HttpResponse;
-use actix_web::{web, Responder};
 use anyhow::anyhow;
 use anyhow::Result as AnyResult;
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument};
 use uuid::Uuid;
+
+use super::get_session_from_identity;
+use super::user_db::SessionInfo;
 
 #[derive(Deserialize)]
 pub struct LoginArgs {
@@ -70,7 +73,8 @@ pub async fn register(args: web::Json<LoginArgs>, user_db: web::Data<UserDb>) ->
             if success {
                 HttpResponse::Ok().json(LoginResponse::ok())
             } else {
-                HttpResponse::BadRequest().json(LoginResponse::error_display("Account already exists"))
+                HttpResponse::BadRequest()
+                    .json(LoginResponse::error_display("Account already exists"))
             }
         }
         Err(err) => HttpResponse::InternalServerError().json(LoginResponse::error(err)),
@@ -130,4 +134,36 @@ pub async fn logout(id: Identity, user_db: web::Data<UserDb>) -> HttpResponse {
     id.forget();
 
     HttpResponse::Ok().finish()
+}
+
+#[derive(Serialize)]
+pub struct SessionInfoResponse {
+    pub user_id: i32,
+    pub valid_until: DateTime<Utc>,
+}
+
+impl From<SessionInfo> for SessionInfoResponse {
+    fn from(session_info: SessionInfo) -> Self {
+        Self {
+            user_id: session_info.user_id,
+            valid_until: session_info.valid_until,
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetMeResponse {
+    session: Option<SessionInfoResponse>,
+}
+
+#[instrument(name = "User Logout", skip(id, user_db))]
+pub async fn get_me(id: Identity, user_db: web::Data<UserDb>) -> HttpResponse {
+    let session = get_session_from_identity(&id, &user_db).await;
+
+    match session {
+        Some(session) => HttpResponse::Ok().json(GetMeResponse {
+            session: Some(session.into()),
+        }),
+        None => HttpResponse::Ok().json(GetMeResponse { session: None }),
+    }
 }

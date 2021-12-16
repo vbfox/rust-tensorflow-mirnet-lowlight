@@ -1,4 +1,8 @@
+use crate::authenticate;
+use crate::users::UserDb;
+
 use super::{image_to_tensor, tensor_to_image, MirnetModel};
+use actix_identity::Identity;
 use actix_multipart::Multipart;
 use actix_web::http::StatusCode;
 use actix_web::web;
@@ -92,8 +96,13 @@ fn process_image_blocking(input_bytes: Vec<u8>) -> Result<Vec<u8>, ProcessError>
     Ok(output_bytes)
 }
 
-#[instrument(skip(payload))]
-pub async fn process_image(payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
+#[instrument(skip(payload, id, user_db))]
+pub async fn process_image(
+    payload: Multipart,
+    id: Identity,
+    user_db: web::Data<UserDb>,
+) -> Result<HttpResponse, actix_web::Error> {
+    authenticate!(&id, &user_db);
     let input_bytes = get_input_bytes(payload).await?;
     let output_bytes = web::block(|| process_image_blocking(input_bytes)).await??;
 

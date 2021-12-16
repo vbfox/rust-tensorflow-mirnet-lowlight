@@ -5,4 +5,7 @@ mod hashing;
 pub(self) use hashing::{hash_password, verify_password};
 
 mod endpoints;
-pub use endpoints::{login, logout, register, LoginArgs, LoginResponse};
+pub use endpoints::{get_me, login, logout, register, LoginArgs, LoginResponse};
+
+mod auth;
+pub use auth::get_session_from_identity;

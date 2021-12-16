@@ -4,7 +4,7 @@ import SyncLoader from "react-spinners/SyncLoader";
 
 import "./App.css";
 
-const API = "http://127.0.0.1:3001/api";
+const API = "/api";
 
 function createBlobUrl(blob: Blob) {
   return (globalThis.webkitURL || globalThis.URL).createObjectURL(blob);
@@ -58,6 +58,8 @@ function Dropzone() {
       fetch(`${API}/run`, {
         method: "POST",
         body: data,
+        credentials: "include",
+        cache: "no-store",
       })
         .then((r) => r.blob())
         .then((blob) => {
@@ -128,6 +130,8 @@ function LoginForm() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ login, password }),
+      credentials: "include",
+      cache: "no-store",
     })
       .then((r) => r.json())
       .then((result: LoginResponse) => {
@@ -142,7 +146,31 @@ function LoginForm() {
       });
   }, [login, password]);
 
-  const onLogin = useCallback(() => {}, []);
+  const onLogin = useCallback(() => {
+    setWorking(true);
+    setError("");
+
+    fetch(`${API}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ login, password }),
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((result: LoginResponse) => {
+        setWorking(false);
+        if (!result.success && result.error) {
+          setError(result.error);
+        }
+      })
+      .catch((err) => {
+        setWorking(false);
+        setError(`${err}`);
+      });
+  }, [login, password]);
 
   return (
     <div>

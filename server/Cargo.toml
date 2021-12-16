@@ -10,7 +10,7 @@ actix-multipart = "=0.4.0-beta.10"
 actix-web = "=4.0.0-beta.14"
 anyhow = "1.0"
 argon2 = "0.3.2"
-chrono = "0.4.19"
+chrono = { version = "0.4.19", features = [ "serde" ] }
 futures = "0.3"
 image = "0.23.14"
 rusqlite = { version = "0.26.3", features = ["bundled"] }

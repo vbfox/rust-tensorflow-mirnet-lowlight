@@ -1,14 +1,14 @@
 use crate::image_processing::{process_image, run_single_file};
-use crate::users::{login, logout, register, UserDb};
+use crate::users::{get_me, login, logout, register, UserDb};
 use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{web, App, HttpServer};
-use tracing_actix_web::TracingLogger;
 use anyhow::Result as AnyResult;
 use rusqlite::Connection;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use tracing::{info, instrument};
+use tracing_actix_web::TracingLogger;
 
 // https://tfhub.dev/rishit-dagli/mirnet-tfjs/1
 // https://colab.research.google.com/github/Rishit-dagli/MIRNet-TFJS/blob/main/MIRNet_Saved_Model.ipynb
@@ -49,6 +49,7 @@ async fn server(port: u16) -> AnyResult<()> {
                     .secure(false),
             ))
             .route("/api/register", web::post().to(register))
+            .route("/api/me", web::get().to(get_me))
             .route("/api/login", web::post().to(login))
             .route("/api/logout", web::post().to(logout))
             .route("/api/run", web::post().to(process_image))
