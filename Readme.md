@@ -79,6 +79,7 @@ as specified on [TensorFlow GPU page](https://www.tensorflow.org/install/gpu).
 * A secondary login method not using cookies (To avoid third party cookies if the model is
   hosted separately from the UI and to allow easier usage via Mobile applications)
 * Investigate accessing GPU for CUDA from Docker (Linux only)
+* Tests (Integration and Unit)
 
 ### Server
 
@@ -95,6 +96,6 @@ as specified on [TensorFlow GPU page](https://www.tensorflow.org/install/gpu).
 
 ### Client
 
-* Better UI showing before/after whith a slider
+* Better UI (Looking nicer, showing before/after whith a slider, ...)
 * Provide some sample images directly in the UI
-* Bette error handling and display
+* Better error handling and display
