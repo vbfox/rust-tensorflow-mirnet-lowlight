@@ -90,10 +90,13 @@ impl UserDb {
     }
 
     #[instrument(name = "UserDb::get_user_by_login", skip(self))]
-    pub async fn get_user_by_login(&self, login: &str) -> Result<UserInfo, rusqlite::Error> {
+    pub async fn get_user_by_login(
+        &self,
+        login: &str,
+    ) -> Result<Option<UserInfo>, rusqlite::Error> {
         let connection = self.connection().await;
 
-        connection.query_row(
+        let result = connection.query_row(
             "SELECT id, password_hash FROM users WHERE login=?1",
             [login],
             |r| {
@@ -105,7 +108,15 @@ impl UserDb {
                     password_hash,
                 })
             },
-        )
+        );
+
+        match result {
+            Ok(info) => Ok(Some(info)),
+            Err(err) => match err {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                _ => Err(err),
+            },
+        }
     }
 
     #[instrument(name = "UserDb::create_session", skip(self))]

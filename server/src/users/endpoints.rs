@@ -88,6 +88,11 @@ async fn login_core(
     password: &str,
 ) -> AnyResult<LoginResponse> {
     let user_info = user_db.get_user_by_login(login).await?;
+    let user_info = match user_info {
+        Some(info) => info,
+        None => return Ok(LoginResponse::error_display("Unknown user")),
+    };
+
     let valid_password =
         verify_password(password, &user_info.password_hash).map_err(|e| anyhow!(e))?;
     if !valid_password {
