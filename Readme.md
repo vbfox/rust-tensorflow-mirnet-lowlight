@@ -2,7 +2,7 @@
 
 A rust server and react client to run the model.
 
-The test images for the corresponding dataset are in `server\dataset\`
+The test images for the corresponding dataset are in [`./server/dataset/`](server/dataset/).
 
 ## References
 
