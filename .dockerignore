@@ -1,0 +1,12 @@
+**/.env
+Dockerfile
+Build.zip
+out/
+
+server/target/
+server/*.png
+server/*.jpg
+server/*.db
+
+client/node_modules
+client/build
