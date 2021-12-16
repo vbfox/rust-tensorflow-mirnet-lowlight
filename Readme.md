@@ -12,6 +12,8 @@ The test images for the corresponding dataset are in `server\dataset\`
 
 ## Usage
 
+The repository require `git-lfs` to checkout.
+
 ### Developement
 
 _Note_: Tensorflow build can be long and takes a lot of memory so the first server build is pretty slow.
