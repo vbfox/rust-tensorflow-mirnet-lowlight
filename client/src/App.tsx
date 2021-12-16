@@ -43,6 +43,7 @@ function Dropzone() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: ["image/png", "image/jpeg"],
+    disabled: working,
   });
 
   return (
