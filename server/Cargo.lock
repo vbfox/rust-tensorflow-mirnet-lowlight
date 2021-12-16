@@ -1344,6 +1344,7 @@ dependencies = [
  "tensorflow",
  "thiserror",
  "tracing",
+ "tracing-actix-web",
  "tracing-futures",
  "tracing-subscriber",
  "uuid",
@@ -2280,6 +2281,19 @@ dependencies = [
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-actix-web"
+version = "0.5.0-beta.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13030b85c40d37169eee20eec527f7e87724e6128efa2ae791d6ffdd4046d32f"
+dependencies = [
+ "actix-web",
+ "pin-project",
+ "tracing",
+ "tracing-futures",
+ "uuid",
 ]
 
 [[package]]

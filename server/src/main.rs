@@ -3,6 +3,7 @@ use crate::users::{login, logout, register, UserDb};
 use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{web, App, HttpServer};
+use tracing_actix_web::TracingLogger;
 use anyhow::Result as AnyResult;
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -39,6 +40,7 @@ async fn server(port: u16) -> AnyResult<()> {
         let cors = Cors::permissive();
 
         App::new()
+            .wrap(TracingLogger::default())
             .wrap(cors)
             .wrap(IdentityService::new(
                 // All-zero key used as we only store unique session IDs for now

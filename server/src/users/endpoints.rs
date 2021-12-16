@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::users::user_db::UserDb;
 use crate::users::{hash_password, verify_password};
@@ -38,6 +38,13 @@ impl LoginResponse {
             error: Some(format!("{:?}", error)),
         }
     }
+
+    pub fn error_display(error: impl Display) -> LoginResponse {
+        LoginResponse {
+            success: false,
+            error: Some(format!("{}", error)),
+        }
+    }
 }
 
 async fn register_account_core(user_db: &UserDb, login: &str, password: &str) -> AnyResult<bool> {
@@ -47,7 +54,7 @@ async fn register_account_core(user_db: &UserDb, login: &str, password: &str) ->
 
     debug!(%password_hash, "Generated password hash");
 
-    Ok(user_db.register(&login, &password_hash).await?)
+    Ok(user_db.register(login, &password_hash).await?)
 }
 
 #[instrument(
@@ -63,7 +70,7 @@ pub async fn register(args: web::Json<LoginArgs>, user_db: web::Data<UserDb>) ->
             if success {
                 HttpResponse::Ok().json(LoginResponse::ok())
             } else {
-                HttpResponse::BadRequest().json(LoginResponse::error("Account already exists"))
+                HttpResponse::BadRequest().json(LoginResponse::error_display("Account already exists"))
             }
         }
         Err(err) => HttpResponse::InternalServerError().json(LoginResponse::error(err)),
@@ -80,7 +87,7 @@ async fn login_core(
     let valid_password =
         verify_password(password, &user_info.password_hash).map_err(|e| anyhow!(e))?;
     if !valid_password {
-        return Ok(LoginResponse::error("Invalid password"));
+        return Ok(LoginResponse::error_display("Invalid password"));
     }
 
     let session_id = Uuid::new_v4().to_string();
@@ -105,7 +112,7 @@ pub async fn login(
     id: Identity,
     args: web::Json<LoginArgs>,
     user_db: web::Data<UserDb>,
-) -> impl Responder {
+) -> HttpResponse {
     match login_core(id, &user_db, &args.login, &args.password).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(err) => HttpResponse::InternalServerError().json(LoginResponse::error(err)),
@@ -113,7 +120,7 @@ pub async fn login(
 }
 
 #[instrument(name = "User Logout", skip(id, user_db))]
-pub async fn logout(id: Identity, user_db: web::Data<UserDb>) -> impl Responder {
+pub async fn logout(id: Identity, user_db: web::Data<UserDb>) -> HttpResponse {
     if let Some(id) = id.identity() {
         info!(%id, "Removing session");
         if let Err(error) = user_db.remove_session(&id).await {

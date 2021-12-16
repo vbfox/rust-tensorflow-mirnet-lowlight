@@ -1,9 +1,9 @@
 use anyhow::Result as AnyResult;
-use chrono::{DateTime, Utc, TimeZone};
+use chrono::{DateTime, TimeZone, Utc};
 use futures::lock::{Mutex, MutexLockFuture};
 use rusqlite::{params, Connection};
 use std::sync::Arc;
-use tracing::info;
+use tracing::{info, instrument};
 
 #[derive(Clone)]
 pub struct UserDb {
@@ -33,6 +33,7 @@ impl UserDb {
         self.connection.lock()
     }
 
+    #[instrument(name = "UserDb::initialize", skip(self))]
     pub async fn initialize(&self) -> AnyResult<()> {
         info!("Initializing database");
 
@@ -59,6 +60,7 @@ impl UserDb {
         Ok(())
     }
 
+    #[instrument(name = "UserDb::register", skip(self, password_hash))]
     pub async fn register(
         &self,
         login: &str,
@@ -87,6 +89,7 @@ impl UserDb {
         }
     }
 
+    #[instrument(name = "UserDb::get_user_by_login", skip(self))]
     pub async fn get_user_by_login(&self, login: &str) -> Result<UserInfo, rusqlite::Error> {
         let connection = self.connection().await;
 
@@ -105,6 +108,7 @@ impl UserDb {
         )
     }
 
+    #[instrument(name = "UserDb::create_session", skip(self))]
     pub async fn create_session(
         &self,
         id: &str,
@@ -121,6 +125,7 @@ impl UserDb {
         Ok(())
     }
 
+    #[instrument(name = "UserDb::remove_session", skip(self))]
     pub async fn remove_session(&self, id: &str) -> Result<(), rusqlite::Error> {
         let connection = self.connection().await;
 
@@ -129,6 +134,7 @@ impl UserDb {
         Ok(())
     }
 
+    #[instrument(name = "UserDb::get_session_by_id", skip(self))]
     pub async fn get_session_by_id(&self, id: &str) -> Result<SessionInfo, rusqlite::Error> {
         let connection = self.connection().await;
 

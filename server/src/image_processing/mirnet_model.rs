@@ -28,18 +28,14 @@ impl MirnetModel {
             .meta_graph_def()
             .get_signature(DEFAULT_SERVING_SIGNATURE_DEF_KEY)?;
 
-        let (_, input_info) = signature
-            .inputs()
-            .into_iter()
-            .next()
-            .context("No input found")?;
+        let (_, input_info) = signature.inputs().iter().next().context("No input found")?;
         let op_input = &self
             .graph
             .operation_by_name_required(&input_info.name().name)?;
 
         let (_, output_info) = signature
             .outputs()
-            .into_iter()
+            .iter()
             .next()
             .context("No output found")?;
         let op_output = &self
@@ -47,7 +43,7 @@ impl MirnetModel {
             .operation_by_name_required(&output_info.name().name)?;
 
         let mut args = SessionRunArgs::new();
-        args.add_feed(op_input, 0, &input);
+        args.add_feed(op_input, 0, input);
         let token_output = args.request_fetch(op_output, 0);
 
         self.bundle.session.run(&mut args)?;
