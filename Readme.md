@@ -57,13 +57,13 @@ as specified on [TensorFlow GPU page](https://www.tensorflow.org/install/gpu).
 
 ## Tech stack
 
-Client:
+### Client
 
 * `create-react-app` in TypeScript mode
 * `react-dropzone`
 * prettier for formatting
 
-Server:
+### Server
 
 * Stable rust
 * Actix as web server
@@ -73,14 +73,14 @@ Server:
 
 ## TODO
 
-Shared:
+### Shared
 
 * Linux and mac instructions
 * A secondary login method not using cookies (To avoid third party cookies if the model is
   hosted separately from the UI and to allow easier usage via Mobile applications)
 * Investigate accessing GPU for CUDA from Docker (Linux only)
 
-Server:
+### Server
 
 * Expose more informations about the configuration of the server
   (Especially if CUDA is available and working)
@@ -93,7 +93,7 @@ Server:
 * Try to find a version of the model where input and output tensors aren't big float32
 * Bound the maximum size of the image and resize if needed
 
-Client:
+### Client
 
 * Better UI showing before/after whith a slider
 * Provide some sample images directly in the UI
