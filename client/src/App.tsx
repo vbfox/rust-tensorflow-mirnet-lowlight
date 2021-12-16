@@ -4,6 +4,8 @@ import SyncLoader from "react-spinners/SyncLoader";
 
 import "./App.css";
 
+const API = "http://127.0.0.1:3001/api";
+
 function createBlobUrl(blob: Blob) {
   return (globalThis.webkitURL || globalThis.URL).createObjectURL(blob);
 }
@@ -53,7 +55,7 @@ function Dropzone() {
       var data = new FormData();
       data.append("input", file);
 
-      fetch("http://127.0.0.1:3001/run", {
+      fetch(`${API}/run`, {
         method: "POST",
         body: data,
       })
@@ -96,9 +98,81 @@ function Dropzone() {
   );
 }
 
+interface LoginResponse {
+  readonly success: boolean;
+  readonly error?: string;
+}
+
+function LoginForm() {
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState("");
+  const [login, setLogin] = useState("user");
+  const onLoginChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setLogin(e.target.value),
+    []
+  );
+
+  const [password, setPassword] = useState("password");
+  const onPasswordChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
+    []
+  );
+
+  const onRegister = useCallback(() => {
+    setWorking(true);
+    setError("");
+
+    fetch(`${API}/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ login, password }),
+    })
+      .then((r) => r.json())
+      .then((result: LoginResponse) => {
+        setWorking(false);
+        if (!result.success && result.error) {
+          setError(result.error);
+        }
+      })
+      .catch((err) => {
+        setWorking(false);
+        setError(`${err}`);
+      });
+  }, [login, password]);
+
+  const onLogin = useCallback(() => {}, []);
+
+  return (
+    <div>
+      <input
+        type="text"
+        value={login}
+        onChange={onLoginChange}
+        disabled={working}
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={onPasswordChange}
+        disabled={working}
+      />
+      <button onClick={onRegister} disabled={working}>
+        Register
+      </button>
+      <button onClick={onLogin} disabled={working}>
+        Login
+      </button>
+      {error && <div className="error">{error}</div>}
+    </div>
+  );
+}
+
 function App() {
   return (
     <div className="app">
+      <LoginForm />
       <Dropzone />
     </div>
   );

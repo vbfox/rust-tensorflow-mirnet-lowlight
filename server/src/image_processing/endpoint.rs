@@ -9,6 +9,9 @@ use image::png::PngEncoder;
 use image::{EncodableLayout, ImageEncoder};
 use std::io::{Cursor, Write};
 use thiserror::Error;
+use tracing::info_span;
+use tracing::instrument;
+use tracing::trace;
 
 async fn get_input_bytes(mut payload: Multipart) -> Result<Vec<u8>, actix_web::Error> {
     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -17,16 +20,11 @@ async fn get_input_bytes(mut payload: Multipart) -> Result<Vec<u8>, actix_web::E
 
             while let Some(chunk) = field.next().await {
                 let data = chunk?;
-                println!("Writing {} bytes", data.len());
+                trace!("Writing {} bytes", data.len());
                 bytes.write_all(&data)?;
             }
 
-            println!("Found input with {} bytes", bytes.len());
-
-            std::fs::File::create("input.png")
-                .unwrap()
-                .write_all(&bytes)
-                .unwrap();
+            trace!("Found input with {} bytes", bytes.len());
 
             return Ok(bytes);
         }
@@ -56,6 +54,9 @@ impl From<ProcessError> for actix_web::Error {
 }
 
 fn process_image_blocking(input_bytes: Vec<u8>) -> Result<Vec<u8>, ProcessError> {
+    let span = info_span!("Processing image request");
+    let _ = span.enter();
+
     let input_image = ImageReader::new(Cursor::new(input_bytes))
         .with_guessed_format()
         .map_err(|e| ProcessError::ErrorBadRequest(format!("Unable to guess format: {:?}", e)))?
@@ -91,9 +92,9 @@ fn process_image_blocking(input_bytes: Vec<u8>) -> Result<Vec<u8>, ProcessError>
     Ok(output_bytes)
 }
 
+#[instrument(skip(payload))]
 pub async fn process_image(payload: Multipart) -> Result<HttpResponse, actix_web::Error> {
     let input_bytes = get_input_bytes(payload).await?;
-
     let output_bytes = web::block(|| process_image_blocking(input_bytes)).await??;
 
     Ok(HttpResponse::build(StatusCode::OK)

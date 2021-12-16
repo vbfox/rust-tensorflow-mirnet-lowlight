@@ -1,14 +1,19 @@
+use crate::image_processing::{process_image, run_single_file};
+use crate::users::{login, logout, register, UserDb};
 use actix_cors::Cors;
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+use actix_identity::{CookieIdentityPolicy, IdentityService};
+use actix_web::{web, App, HttpServer};
 use anyhow::Result as AnyResult;
-use image_processing::{process_image, run_single_file};
+use rusqlite::Connection;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tracing::{info, instrument};
 
 // https://tfhub.dev/rishit-dagli/mirnet-tfjs/1
 // https://colab.research.google.com/github/Rishit-dagli/MIRNet-TFJS/blob/main/MIRNet_Saved_Model.ipynb
 
 mod image_processing;
+mod users;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -20,27 +25,32 @@ struct Opt {
     input: Option<PathBuf>,
 }
 
-async fn create_account(req: HttpRequest) -> impl Responder {
-    let name = req.match_info().get("name").unwrap_or("World");
-    format!("Hello {}!", &name)
-}
-
-async fn login(req: HttpRequest) -> impl Responder {
-    let name = req.match_info().get("name").unwrap_or("World");
-    format!("Hello {}!", &name)
-}
-
+#[instrument]
 async fn server(port: u16) -> AnyResult<()> {
-    println!("Serving on 127.0.0.1:{}", port);
+    tracing_subscriber::fmt::init();
 
-    HttpServer::new(|| {
+    let user_db = UserDb::new(Connection::open("users.db")?);
+    user_db.initialize().await?;
+
+    info!("Serving on 127.0.0.1:{}", port);
+
+    let user_db = web::Data::new(user_db);
+    HttpServer::new(move || {
         let cors = Cors::permissive();
 
         App::new()
             .wrap(cors)
-            .route("/create", web::get().to(create_account))
-            .route("/login", web::get().to(login))
-            .route("/run", web::post().to(process_image))
+            .wrap(IdentityService::new(
+                // All-zero key used as we only store unique session IDs for now
+                CookieIdentityPolicy::new(&[0; 32])
+                    .name("auth-cookie")
+                    .secure(false),
+            ))
+            .route("/api/register", web::post().to(register))
+            .route("/api/login", web::post().to(login))
+            .route("/api/logout", web::post().to(logout))
+            .route("/api/run", web::post().to(process_image))
+            .app_data(user_db.clone())
     })
     .bind(format!("127.0.0.1:{}", port))?
     .run()

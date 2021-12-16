@@ -5,11 +5,20 @@ edition = "2021"
 
 [dependencies]
 actix-cors = "=0.6.0-beta.6"
+actix-identity = "=0.4.0-beta.5"
 actix-multipart = "=0.4.0-beta.10"
 actix-web = "=4.0.0-beta.14"
 anyhow = "1.0"
+argon2 = "0.3.2"
+chrono = "0.4.19"
 futures = "0.3"
 image = "0.23.14"
+rusqlite = { version = "0.26.3", features = ["bundled"] }
+serde = "1.0.131"
 structopt = "0.3"
 tensorflow = { version = "0.17.0", features = ["tensorflow_gpu"] }
 thiserror = "1.0"
+tracing = "0.1.29"
+tracing-futures = "0.2.5"
+tracing-subscriber = { version = "0.3.3", features = ["env-filter"] }
+uuid = { version = "0.8.2", features = ["v4"] }
