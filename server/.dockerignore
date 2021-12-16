@@ -1,6 +1,0 @@
-.env
-target/
-Dockerfile
-*.png
-*.jpg
-*.db
