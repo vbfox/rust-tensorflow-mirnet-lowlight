@@ -24,16 +24,24 @@ mod users;
 struct Opt {
     #[structopt(parse(from_os_str))]
     input: Option<PathBuf>,
+
+    #[structopt(name = "static", short, long, parse(from_os_str), default_value = "../client/build")]
+    static_dir: PathBuf,
+
+    #[structopt(short, long, default_value = "3001")]
+    port: u16,
 }
 
 #[instrument]
-async fn server(port: u16) -> AnyResult<()> {
+async fn server(port: u16, static_dir: PathBuf) -> AnyResult<()> {
+    std::env::set_var("RUST_LOG", "debug");
     tracing_subscriber::fmt::init();
 
     let user_db = UserDb::new(Connection::open("users.db")?);
     user_db.initialize().await?;
 
     info!("Serving on 127.0.0.1:{}", port);
+    info!("Static files will be served from {:?}", &static_dir);
 
     let user_db = web::Data::new(user_db);
     HttpServer::new(move || {
@@ -53,6 +61,7 @@ async fn server(port: u16) -> AnyResult<()> {
             .route("/api/login", web::post().to(login))
             .route("/api/logout", web::post().to(logout))
             .route("/api/run", web::post().to(process_image))
+            .service(actix_files::Files::new("/", &static_dir).show_files_listing().redirect_to_slash_directory().index_file("index.html"))
             .app_data(user_db.clone())
     })
     .bind(format!("127.0.0.1:{}", port))?
@@ -68,7 +77,7 @@ async fn main() -> AnyResult<()> {
     if let Some(path) = opt.input {
         run_single_file(path, "out.png")?;
     } else {
-        server(3001).await?;
+        server(opt.port, opt.static_dir).await?;
     }
 
     Ok(())
