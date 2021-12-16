@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import SyncLoader from "react-spinners/SyncLoader";
 
@@ -105,7 +105,7 @@ interface LoginResponse {
   readonly error?: string;
 }
 
-function LoginForm() {
+function LoginForm({ checkLoginStatus }: { checkLoginStatus: () => void }) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const [login, setLogin] = useState("user");
@@ -119,32 +119,6 @@ function LoginForm() {
     (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
     []
   );
-
-  const onRegister = useCallback(() => {
-    setWorking(true);
-    setError("");
-
-    fetch(`${API}/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ login, password }),
-      credentials: "include",
-      cache: "no-store",
-    })
-      .then((r) => r.json())
-      .then((result: LoginResponse) => {
-        setWorking(false);
-        if (!result.success && result.error) {
-          setError(result.error);
-        }
-      })
-      .catch((err) => {
-        setWorking(false);
-        setError(`${err}`);
-      });
-  }, [login, password]);
 
   const onLogin = useCallback(() => {
     setWorking(true);
@@ -164,13 +138,43 @@ function LoginForm() {
         setWorking(false);
         if (!result.success && result.error) {
           setError(result.error);
+        } else {
+          checkLoginStatus();
         }
       })
       .catch((err) => {
         setWorking(false);
         setError(`${err}`);
       });
-  }, [login, password]);
+  }, [login, password, checkLoginStatus]);
+
+  const onRegister = useCallback(() => {
+    setWorking(true);
+    setError("");
+
+    fetch(`${API}/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ login, password }),
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((result: LoginResponse) => {
+        setWorking(false);
+        if (!result.success && result.error) {
+          setError(result.error);
+        } else {
+          void onLogin();
+        }
+      })
+      .catch((err) => {
+        setWorking(false);
+        setError(`${err}`);
+      });
+  }, [login, password, onLogin]);
 
   return (
     <div>
@@ -197,11 +201,100 @@ function LoginForm() {
   );
 }
 
+interface SessionInfo {
+  readonly login: string;
+}
+
+type LoginStatus = "unknown" | "checking" | "not_authenticated" | SessionInfo;
+
+interface MeResponse {
+  readonly session?: SessionInfo;
+}
+
+function useLoginStatus(): [LoginStatus, () => void] {
+  const [status, setStatus] = useState<LoginStatus>("unknown");
+
+  useEffect(() => {
+    if (status !== "unknown") {
+      return;
+    }
+
+    setStatus("checking");
+
+    fetch(`${API}/me`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((result: MeResponse) => {
+        if (result.session) {
+          setStatus(result.session);
+        } else {
+          setStatus("not_authenticated");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setStatus("not_authenticated");
+      });
+  }, [status]);
+
+  const check = useCallback(() => setStatus("unknown"), []);
+
+  return [status, check];
+}
+
+interface LoginProps {
+  loginStatus: LoginStatus;
+  checkLoginStatus: () => void;
+}
+
+function LoginView({ loginStatus, checkLoginStatus }: LoginProps) {
+  const logout = useCallback(() => {
+    fetch(`${API}/logout`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then(() => {
+        checkLoginStatus();
+      })
+      .catch(() => {
+        checkLoginStatus();
+      });
+  }, [checkLoginStatus]);
+
+  if (loginStatus === "checking" || loginStatus === "unknown") {
+    return <div className="login">...</div>;
+  }
+
+  if (loginStatus === "not_authenticated") {
+    return (
+      <div className="login">
+        <LoginForm checkLoginStatus={checkLoginStatus} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="login">
+      <strong>{loginStatus.login}</strong>(
+      <button onClick={logout}>Logout</button>)
+    </div>
+  );
+}
+
 function App() {
+  const [loginStatus, checkLoginStatus] = useLoginStatus();
+  const isLoggedIn = typeof loginStatus == "object";
   return (
     <div className="app">
-      <LoginForm />
-      <Dropzone />
+      <LoginView
+        loginStatus={loginStatus}
+        checkLoginStatus={checkLoginStatus}
+      />
+      {isLoggedIn && <Dropzone />}
     </div>
   );
 }
