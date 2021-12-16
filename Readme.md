@@ -6,6 +6,20 @@
 * https://tfhub.dev/rishit-dagli/mirnet-tfjs/1
 * https://colab.research.google.com/github/Rishit-dagli/MIRNet-TFJS/blob/main/MIRNet_Saved_Model.ipynb
 
+## Tech stack
+
+Client:
+* `create-react-app` in TypeScript mode
+* `react-dropzone`
+* prettier for formatting
+
+Server:
+* Stable rust
+* Actix as web server
+* Tensorflow crate (build and wrap the C++ version)
+* Tracing ecosystem for logs
+* SQL Lite as a local database
+
 ## TODO
 
 Shared:
@@ -21,3 +35,4 @@ Server:
 Client:
 * Better UI showing before/after whith a slider
 * Provide some sample images directly in the UI
+* Bette error handling and display
